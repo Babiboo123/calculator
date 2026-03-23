@@ -270,10 +270,14 @@
         function toggleDark(cb) { document.body.setAttribute('data-theme', cb.checked ? 'dark' : 'light'); }
 
         function format4Bit(val) {
-            let clean = val.replace(/\s/g, '');
-            if (!clean) return "";
-            return clean.split('').reverse().join('').match(/.{1,4}/g).join(' ').split('').reverse().join('');
-        }
+    let clean = val.replace(/\s/g, '');
+    if (!clean) return "";
+    if (clean.length <= 4) return clean; // Ngắn quá thì khỏi cách cho đẹp
+    return clean.split('').reverse().join('')
+                .match(/.{1,4}/g).join(' ')
+                .split('').reverse().join('');
+}
+
 
         function handleLaptopTyping(el) {
             let pos = el.selectionStart;
@@ -409,44 +413,55 @@ function calc() {
 
     // 3. LẤY 8-BIT KẾT QUẢ
     let maskedRes = res & 0xFF;
-    let bRes = maskedRes.toString(2).padStart(8, '0');
+        // 3. XỬ LÝ KẾT QUẢ THEO CHẾ ĐỘ
+    let bRes;
+    if (currentMode === 'signed') {
+        // Có dấu: Ép về 8-bit (lấy bù 2 nếu âm)
+        let maskedRes = res & 0xFF;
+        bRes = maskedRes.toString(2).padStart(8, '0');
+    } else {
+        // Không dấu: Hiện thị nhị phân thuần túy (không giới hạn, không thêm 0 đầu)
+        // Nếu res < 0 (do phép trừ), mình dùng res >>> 0 để lấy trị tuyệt đối nhị phân hoặc hiện 0
+        bRes = (res < 0) ? "0" : res.toString(2);
+    }
 
-    // 4. HIỂN THỊ KẾT QUẢ (MÀU CHỮ TRẮNG ĐÃ CHỈNH TRONG CSS)
+    // 4. HIỂN THỊ LÊN MÀN HÌNH
     display.innerText = format4Bit(bRes);
     
-    document.getElementById('c-oct').innerText = maskedRes.toString(8);
+    // Cập nhật các hệ cơ số khác
+    let valForConv = (currentMode === 'signed') ? (res & 0xFF) : Math.max(0, res);
+    document.getElementById('c-oct').innerText = valForConv.toString(8);
     document.getElementById('c-dec').innerText = res;
-    document.getElementById('c-hex').innerText = maskedRes.toString(16).toUpperCase();
-    
-    const asc = document.getElementById('c-asc');
-    if (res >= 32 && res <= 126) asc.innerText = `'${String.fromCharCode(res)}'`;
-    else asc.innerText = (res >= 0 && res <= 255) ? 'Char' : 'N/A';
+    document.getElementById('c-hex').innerText = valForConv.toString(16).toUpperCase();
 
     // 5. CẬP NHẬT BƯỚC GIẢI & LỊCH SỬ
-    genSteps(format4Bit(valA), format4Bit(valB), format4Bit(bRes), curOp, dA, dB, res);
-    addHistory(format4Bit(valA), curOp, format4Bit(valB), format4Bit(bRes));
+    // Truyền rawA, rawB để giữ nguyên số 0 ở đầu sốp đã nhập
+genSteps(format4Bit(rawA), format4Bit(rawB), format4Bit(bRes), curOp, dA, dB, res);
+addHistory(format4Bit(valA), curOp, format4Bit(valB), format4Bit(bRes));
 }
 
 // Cập nhật luôn hàm genSteps để hiện cả giá trị thập phân cho rõ ràng
 function genSteps(a, b, res, op, dA, dB, dRes) {
     const box = document.getElementById('step-box');
-    // Hiển thị tên chế độ để người dùng dễ theo dõi
     let modeName = currentMode === 'signed' ? "CÓ DẤU (SIGNED)" : "KHÔNG DẤU (UNSIGNED)";
     
+    // Ở chế độ KHÔNG DẤU, mình dùng chính xác những gì sốp nhập (biến a, b truyền từ rawA, rawB)
+    let displayA = a; 
+    let displayB = b;
+    let displayRes = res; // res đã được xử lý ở hàm calc() để không có số 0 thừa
+
     let s = `TRÌNH BÀY CHI TIẾT (${modeName}):\n\n`;
-    s += `   ${a}  (A = ${dA})\n`;
-    s += `${op}  ${b}  (B = ${dB})\n`;
-    s += `   ${'-'.repeat(9)}\n`;
-    s += `   ${res}  (KQ = ${dRes})`;
+    s += `   ${displayA.padStart(11, ' ')}  (A = ${dA})\n`;
+    s += `${op}  ${displayB.padStart(11, ' ')}  (B = ${dB})\n`;
+    s += `   ${'-'.repeat(15)}\n`;
+    s += `   ${displayRes.padStart(11, ' ')}  (KQ = ${dRes})`;
     
-    // Chỉ hiện cảnh báo Overflow (Tràn số) khi ở chế độ Có Dấu
     if (currentMode === 'signed' && (dRes > 127 || dRes < -128)) {
         s += `\n\n⚠️ CẢNH BÁO: TRÀN SỐ (OVERFLOW)!`;
     }
     
     box.innerText = s;
 }
-
 
         function toggleSteps() {
             let b = document.getElementById('step-box');
@@ -477,4 +492,4 @@ function genSteps(a, b, res, op, dA, dB, dRes) {
         setInterval(createParticle, 800);
     </script>
 </body>
-</html>
+                </html>
