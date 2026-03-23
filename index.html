@@ -434,10 +434,17 @@ function calc() {
     document.getElementById('c-dec').innerText = res;
     document.getElementById('c-hex').innerText = valForConv.toString(16).toUpperCase();
 
-    // 5. CẬP NHẬT BƯỚC GIẢI & LỊCH SỬ
-    // Truyền rawA, rawB để giữ nguyên số 0 ở đầu sốp đã nhập
-genSteps(format4Bit(rawA), format4Bit(rawB), format4Bit(bRes), curOp, dA, dB, res);
-addHistory(format4Bit(valA), curOp, format4Bit(valB), format4Bit(bRes));
+      // 5. CHỌN DỮ LIỆU HIỂN THỊ CHO BƯỚC GIẢI (Sửa ở đây nè sốp!)
+    // Chế độ Có dấu: dùng valA, valB (đã ép đủ 8 bit)
+    // Chế độ Không dấu: dùng rawA, rawB (đúng những gì sốp đã nhập)
+    let stepA = (currentMode === 'signed') ? valA : rawA;
+    let stepB = (currentMode === 'signed') ? valB : rawB;
+
+    // Gọi hàm hiện Bước giải với dữ liệu đã chọn
+    genSteps(format4Bit(stepA), format4Bit(stepB), format4Bit(bRes), curOp, dA, dB, res);
+    
+    // Cập nhật Lịch sử (Dùng stepA, stepB cho thống nhất với bước giải)
+    addHistory(format4Bit(stepA), curOp, format4Bit(stepB), format4Bit(bRes));
 }
 
 // Cập nhật luôn hàm genSteps để hiện cả giá trị thập phân cho rõ ràng
@@ -445,16 +452,12 @@ function genSteps(a, b, res, op, dA, dB, dRes) {
     const box = document.getElementById('step-box');
     let modeName = currentMode === 'signed' ? "CÓ DẤU (SIGNED)" : "KHÔNG DẤU (UNSIGNED)";
     
-    // Ở chế độ KHÔNG DẤU, mình dùng chính xác những gì sốp nhập (biến a, b truyền từ rawA, rawB)
-    let displayA = a; 
-    let displayB = b;
-    let displayRes = res; // res đã được xử lý ở hàm calc() để không có số 0 thừa
-
     let s = `TRÌNH BÀY CHI TIẾT (${modeName}):\n\n`;
-    s += `   ${displayA.padStart(11, ' ')}  (A = ${dA})\n`;
-    s += `${op}  ${displayB.padStart(11, ' ')}  (B = ${dB})\n`;
-    s += `   ${'-'.repeat(15)}\n`;
-    s += `   ${displayRes.padStart(11, ' ')}  (KQ = ${dRes})`;
+    // Căn lề phải (12 khoảng trắng) để các bit luôn thẳng hàng
+    s += `   ${a.padStart(12, ' ')}  (A = ${dA})\n`;
+    s += `${op}  ${b.padStart(12, ' ')}  (B = ${dB})\n`;
+    s += `   ${'-'.repeat(16)}\n`;
+    s += `   ${res.padStart(12, ' ')}  (KQ = ${dRes})`;
     
     if (currentMode === 'signed' && (dRes > 127 || dRes < -128)) {
         s += `\n\n⚠️ CẢNH BÁO: TRÀN SỐ (OVERFLOW)!`;
@@ -462,6 +465,7 @@ function genSteps(a, b, res, op, dA, dB, dRes) {
     
     box.innerText = s;
 }
+
 
         function toggleSteps() {
             let b = document.getElementById('step-box');
@@ -492,4 +496,4 @@ function genSteps(a, b, res, op, dA, dB, dRes) {
         setInterval(createParticle, 800);
     </script>
 </body>
-                </html>
+    </html>
