@@ -377,32 +377,25 @@ function calc() {
     if(!curOp) return showErr("Lỗi : Chưa chọn phép tính.");
     if(!rawB) return showErr("Lỗi: Hãy nhập số B.");
 
-    // 1. CHUẨN HÓA & LẤY GIÁ TRỊ THẬP PHÂN (TÁCH BIỆT CHẾ ĐỘ)
+    // 1. CHUẨN HÓA & LẤY GIÁ TRỊ THẬP PHÂN
     let valA, valB, dA, dB;
-
     if (currentMode === 'signed') {
-        // CHẾ ĐỘ CÓ DẤU: Dùng Sign Extension (Ép kiểu 8-bit)
         valA = signExtend8(rawA);
         valB = signExtend8(rawB);
-        
         dA = parseInt(valA, 2);
-        if (valA[0] === '1') dA -= 256; // Chuyển từ nhị phân bù 2 sang số âm
-
+        if (valA[0] === '1') dA -= 256;
         dB = parseInt(valB, 2);
         if (valB[0] === '1') dB -= 256;
     } else {
-        // CHẾ ĐỘ KHÔNG DẤU: Chỉ thêm số 0 cho đủ 8 bit, không ép kiểu dấu
         valA = rawA.padStart(8, '0');
         valB = rawB.padStart(8, '0');
-        
-        dA = parseInt(valA, 2);
-        dB = parseInt(valB, 2);
+        dA = parseInt(rawA, 2); // Lấy giá trị thực không dấu
+        dB = parseInt(rawB, 2);
     }
 
     // 2. TÍNH TOÁN
     let res = 0;
     if(curOp === '/' && dB === 0) return showErr("Lỗi : Không thể chia cho 0.");
-    
     switch(curOp) {
         case '+': res = dA + dB; break;
         case '-': res = dA - dB; break;
@@ -410,42 +403,39 @@ function calc() {
         case '/': res = Math.floor(dA / dB); break;
     }
 
-
-    // 3. LẤY 8-BIT KẾT QUẢ
-    let maskedRes = res & 0xFF;
-        // 3. XỬ LÝ KẾT QUẢ THEO CHẾ ĐỘ
+    // 3. XỬ LÝ NHỊ PHÂN KẾT QUẢ
     let bRes;
     if (currentMode === 'signed') {
-        // Có dấu: Ép về 8-bit (lấy bù 2 nếu âm)
         let maskedRes = res & 0xFF;
         bRes = maskedRes.toString(2).padStart(8, '0');
     } else {
-        // Không dấu: Hiện thị nhị phân thuần túy (không giới hạn, không thêm 0 đầu)
-        // Nếu res < 0 (do phép trừ), mình dùng res >>> 0 để lấy trị tuyệt đối nhị phân hoặc hiện 0
         bRes = (res < 0) ? "0" : res.toString(2);
     }
 
-    // 4. HIỂN THỊ LÊN MÀN HÌNH
+    // 4. HIỂN THỊ MÀN HÌNH CHÍNH & CƠ SỐ
     display.innerText = format4Bit(bRes);
+    let final8BitVal = parseInt(bRes.replace(/\s/g, ''), 2);
     
-    // Cập nhật các hệ cơ số khác
-    let valForConv = (currentMode === 'signed') ? (res & 0xFF) : Math.max(0, res);
-    document.getElementById('c-oct').innerText = valForConv.toString(8);
-    document.getElementById('c-dec').innerText = res;
-    document.getElementById('c-hex').innerText = valForConv.toString(16).toUpperCase();
+    document.getElementById('c-oct').innerText = final8BitVal.toString(8);
+    document.getElementById('c-dec').innerText = (currentMode === 'signed') ? res : final8BitVal;
+    document.getElementById('c-hex').innerText = final8BitVal.toString(16).toUpperCase();
+    
+    // 5. XỬ LÝ ASCII
+    const asc = document.getElementById('c-asc');
+    if (final8BitVal >= 32 && final8BitVal <= 126) {
+        asc.innerText = `'${String.fromCharCode(final8BitVal)}'`;
+    } else {
+        asc.innerText = (final8BitVal === 0) ? 'NULL' : 'N/A';
+    }
 
-      // 5. CHỌN DỮ LIỆU HIỂN THỊ CHO BƯỚC GIẢI (Sửa ở đây nè sốp!)
-    // Chế độ Có dấu: dùng valA, valB (đã ép đủ 8 bit)
-    // Chế độ Không dấu: dùng rawA, rawB (đúng những gì sốp đã nhập)
+    // 6. CẬP NHẬT BƯỚC GIẢI (ĐỊNH NGHĨA BIẾN TẠI ĐÂY)
     let stepA = (currentMode === 'signed') ? valA : rawA;
     let stepB = (currentMode === 'signed') ? valB : rawB;
 
-    // Gọi hàm hiện Bước giải với dữ liệu đã chọn
     genSteps(format4Bit(stepA), format4Bit(stepB), format4Bit(bRes), curOp, dA, dB, res);
-    
-    // Cập nhật Lịch sử (Dùng stepA, stepB cho thống nhất với bước giải)
     addHistory(format4Bit(stepA), curOp, format4Bit(stepB), format4Bit(bRes));
 }
+
 
 // Cập nhật luôn hàm genSteps để hiện cả giá trị thập phân cho rõ ràng
 function genSteps(a, b, res, op, dA, dB, dRes) {
