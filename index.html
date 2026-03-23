@@ -441,20 +441,44 @@ function calc() {
 function genSteps(a, b, res, op, dA, dB, dRes) {
     const box = document.getElementById('step-box');
     let modeName = currentMode === 'signed' ? "CÓ DẤU (SIGNED)" : "KHÔNG DẤU (UNSIGNED)";
-    
     let s = `TRÌNH BÀY CHI TIẾT (${modeName}):\n\n`;
-    // Căn lề phải (12 khoảng trắng) để các bit luôn thẳng hàng
-    s += `   ${a.padStart(12, ' ')}  (A = ${dA})\n`;
-    s += `${op}  ${b.padStart(12, ' ')}  (B = ${dB})\n`;
-    s += `   ${'-'.repeat(16)}\n`;
-    s += `   ${res.padStart(12, ' ')}  (KQ = ${dRes})`;
-    
+
+    // NẾU LÀ PHÉP NHÂN KHÔNG DẤU - TRÌNH BÀY KIỂU BẬC THANG
+    if (op === '*' && currentMode === 'unsigned') {
+        let cleanA = a.replace(/\s/g, '');
+        let cleanB = b.replace(/\s/g, '');
+        let lenB = cleanB.length;
+        
+        s += `   ${cleanA.padStart(15, ' ')} (A = ${dA})\n`;
+        s += `x  ${cleanB.padStart(15, ' ')} (B = ${dB})\n`;
+        s += `   ${'-'.repeat(18)}\n`;
+
+        // Tạo các dòng tích riêng
+        for (let i = 0; i < lenB; i++) {
+            let bit = cleanB[lenB - 1 - i];
+            let partial = (bit === '1') ? cleanA : "0".repeat(cleanA.length);
+            // Mỗi dòng thụt lùi vào i vị trí bên trái
+            let row = partial + " ".repeat(i); 
+            s += `   ${row.padStart(15, ' ')}\n`;
+        }
+
+        s += `   ${'-'.repeat(18)}\n`;
+        s += `   ${res.padStart(15, ' ')} (KQ = ${dRes})`;
+    } 
+    // CÁC PHÉP TÍNH KHÁC (CỘNG, TRỪ, CHIA) GIỮ NGUYÊN KIỂU CŨ
+    else {
+        s += `   ${a.padStart(12, ' ')}  (A = ${dA})\n`;
+        s += `${op}  ${b.padStart(12, ' ')}  (B = ${dB})\n`;
+        s += `   ${'-'.repeat(16)}\n`;
+        s += `   ${res.padStart(12, ' ')}  (KQ = ${dRes})`;
+    }
+
     if (currentMode === 'signed' && (dRes > 127 || dRes < -128)) {
         s += `\n\n⚠️ CẢNH BÁO: TRÀN SỐ (OVERFLOW)!`;
     }
-    
     box.innerText = s;
 }
+
 
 
         function toggleSteps() {
@@ -486,4 +510,4 @@ function genSteps(a, b, res, op, dA, dB, dRes) {
         setInterval(createParticle, 800);
     </script>
 </body>
-    </html>
+</html>
