@@ -355,77 +355,81 @@
         function fromTwos(bin) { let n = bin.length; let val = BigInt("0b" + bin); return (bin[0] === '1') ? val - (1n << BigInt(n)) : val; }
         function toTwos(val, bits) { let mask = (1n << BigInt(bits)) - 1n; return (BigInt(val) & mask).toString(2).padStart(bits, '0'); }
 
-        function calc() {
-            const aRaw = document.getElementById('num1').value.replace(/\s/g, '');
-            const bRaw = document.getElementById('num2').value.replace(/\s/g, '');
-            if(!aRaw) return showErr("Lỗi: Hãy nhập số A.");
-            if(!curOp) return showErr("Lỗi: Hãy chọn phép tính.");
-            if(!bRaw) return showErr("Lỗi: Hãy nhập số B.");
+        function signExtend8(binStr) {
+    let clean = binStr.replace(/\s/g, '');
+    if (!clean) return "00000000";
+    if (clean.length >= 8) return clean.slice(-8);
+    // Lấy bit đầu làm bit dấu để kéo dài ra cho đủ 8 bit
+    let signBit = clean[0]; 
+    return clean.padStart(8, signBit);
+}
 
-            try {
-                let dA, dB, resDec, finalBin;
-                let bits = Math.max(aRaw.length, bRaw.length);
+function calc() {
+    const rawA = document.getElementById('num1').value.replace(/\s/g, '');
+    const rawB = document.getElementById('num2').value.replace(/\s/g, '');
+    const display = document.getElementById('display-main');
 
-                if (currentMode === 'unsigned') {
-                    dA = BigInt("0b" + aRaw); dB = BigInt("0b" + bRaw);
-                    if(curOp==='/' && dB===0n) return showErr("Lỗi: Không thể chia cho 0.");
-                    switch(curOp) {
-                        case '+': resDec = dA + dB; break;
-                        case '-': resDec = dA - dB; break;
-                        case '*': resDec = dA * dB; break;
-                        case '/': resDec = dA / dB; break;
-                    }
-                    finalBin = (resDec < 0n ? "-" : "") + (resDec < 0n ? -resDec : resDec).toString(2);
-                } else {
-                    dA = fromTwos(aRaw.padStart(bits, aRaw[0]));
-                    dB = fromTwos(bRaw.padStart(bits, bRaw[0]));
-                    switch(curOp) {
-                        case '+': resDec = dA + dB; break;
-                        case '-': resDec = dA - dB; break;
-                    }
-                    finalBin = toTwos(resDec, bits); 
-                }
+    if(!rawA) return showErr("Lỗi : Hãy nhập số A.");
+    if(!curOp) return showErr("Lỗi : Chưa chọn phép tính.");
+    if(!rawB) return showErr("Lỗi: Hãy nhập số B.");
 
-                document.getElementById('display-main').innerText = format4Bit(finalBin);
-                document.getElementById('c-oct').innerText = resDec.toString(8);
-                document.getElementById('c-dec').innerText = resDec.toString();
-                document.getElementById('c-hex').innerText = (resDec < 0n ? "-" : "") + (resDec < 0n ? -resDec : resDec).toString(16).toUpperCase();
-                
-                let n = Number(resDec);
-                let asc = document.getElementById('c-asc');
-                if (n >= 32 && n <= 126) asc.innerText = `'${String.fromCharCode(n)}'`;
-                else if (n >= 0 && n <= 255) asc.innerText = 'N-P';
-                else asc.innerText = 'N/A';
+    // 1. CHUẨN HÓA 8-BIT (SIGN EXTENSION)
+    let valA = signExtend8(rawA);
+    let valB = signExtend8(rawB);
 
-                genVerticalSteps(aRaw, bRaw, finalBin, curOp, dA, dB, resDec);
-                addHistory(format4Bit(aRaw), curOp, format4Bit(bRaw), format4Bit(finalBin));
-            } catch(e) { showErr("Lỗi tính toán."); }
-        }
+    // 2. CHUYỂN SANG SỐ THẬP PHÂN CÓ DẤU
+    let dA = parseInt(valA, 2);
+    if (valA[0] === '1') dA -= 256; 
 
-        function genVerticalSteps(a, b, res, op, dA, dB, dRes) {
-            const box = document.getElementById('step-box');
-            let maxW = Math.max(a.length, b.length, res.replace('-','').length);
-            if (op === '*') maxW = res.length;
-            const fmt = (s) => s.split('').join(' ');
-            const padLen = maxW * 2 - 1;
+    let dB = parseInt(valB, 2);
+    if (valB[0] === '1') dB -= 256;
 
-            let s = `TRÌNH BÀY CHI TIẾT:\n\n`;
-            s += `      ${fmt(a).padStart(padLen, ' ')}  (A = ${dA})\n`;
-            s += `   ${op}  ${fmt(b).padStart(padLen, ' ')}  (B = ${dB})\n`;
-            s += `      ${'-'.repeat(padLen)}\n`;
+    let res = 0;
+    if(curOp === '/' && dB === 0) return showErr("Lỗi : Không thể chia cho 0.");
+    
+    switch(curOp) {
+        case '+': res = dA + dB; break;
+        case '-': res = dA - dB; break;
+        case '*': res = dA * dB; break;
+        case '/': res = Math.floor(dA / dB); break;
+    }
 
-            if (op === '*') {
-                let bArr = b.split('').reverse();
-                for (let i = 0; i < bArr.length; i++) {
-                    let part = (bArr[i] === '1' ? a : "0".repeat(a.length));
-                    let staircase = fmt(part) + " ".repeat(i * 2);
-                    s += `      ${staircase.padStart(padLen, ' ')}  (Bit ${i})\n`;
-                }
-                s += `      ${'-'.repeat(padLen)}\n`;
-            }
-            s += `      ${fmt(res.replace('-','')).padStart(padLen, ' ')}  (KQ = ${dRes})`;
-            box.innerText = s;
-        }
+    // 3. LẤY 8-BIT KẾT QUẢ
+    let maskedRes = res & 0xFF;
+    let bRes = maskedRes.toString(2).padStart(8, '0');
+
+    // 4. HIỂN THỊ KẾT QUẢ (MÀU CHỮ TRẮNG ĐÃ CHỈNH TRONG CSS)
+    display.innerText = format4Bit(bRes);
+    
+    document.getElementById('c-oct').innerText = maskedRes.toString(8);
+    document.getElementById('c-dec').innerText = res;
+    document.getElementById('c-hex').innerText = maskedRes.toString(16).toUpperCase();
+    
+    const asc = document.getElementById('c-asc');
+    if (res >= 32 && res <= 126) asc.innerText = `'${String.fromCharCode(res)}'`;
+    else asc.innerText = (res >= 0 && res <= 255) ? 'Char' : 'N/A';
+
+    // 5. CẬP NHẬT BƯỚC GIẢI & LỊCH SỬ
+    genSteps(format4Bit(valA), format4Bit(valB), format4Bit(bRes), curOp, dA, dB, res);
+    addHistory(format4Bit(valA), curOp, format4Bit(valB), format4Bit(bRes));
+}
+
+// Cập nhật luôn hàm genSteps để hiện cả giá trị thập phân cho rõ ràng
+function genSteps(a, b, res, op, dA, dB, dRes) {
+    const box = document.getElementById('step-box');
+    let s = `TRÌNH BÀY CHI TIẾT:\n\n`;
+    s += `   ${a}  (A = ${dA})\n`;
+    s += `${op}  ${b}  (B = ${dB})\n`;
+    s += `   ${'-'.repeat(9)}\n`;
+    s += `   ${res}  (KQ = ${dRes})`;
+    
+    // Thêm cảnh báo Overflow nếu kết quả vượt vùng -128 đến 127
+    if (dRes > 127 || dRes < -128) {
+        s += `\n\n⚠️ CẢNH BÁO: TRÀN SỐ (OVERFLOW)!`;
+    }
+    
+    box.innerText = s;
+}
 
         function toggleSteps() {
             let b = document.getElementById('step-box');
