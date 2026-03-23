@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NHÓM 2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* HỆ THỐNG BIẾN MÀU MẶC ĐỊNH (LIGHT MODE) */
+        :root {
+            --primary: #ff4d94;
+            --bg-body: #fff0f3;
+            --bg-grid: #ffc2d1;
+            --calc-body: #ffffff;
+            --screen-bg: #ffffff;
+            --screen-text: #ff4d94;
+            --input-bg: #ffffff;
+            --input-text: #ff4d94;
+            --btn-num: #ffffff;
+            --btn-text: #444444; 
+            --btn-func: #ffcdd2;
+            --btn-op: #e0f7fa;
+            --btn-op-text: #00acc1;
+            --history-item: #fffaff;
+            --border-glow: 0 0 25px rgba(255, 77, 148, 0.4);
+        }
+
+        /* DARK MODE DYNAMIC */
+        [data-theme="dark"] {
+            --bg-body: #0d0d0d;
+            --bg-grid: #2a2a2a;
+            --calc-body: #1a1a1a;
+            --screen-bg: #000000;
+            --screen-text: #00ffcc; 
+            --input-bg: #2d2d2d;
+            --input-text: #00ffcc;
+            --btn-num: #333333;
+            --btn-text: #ffffff; 
+            --btn-func: #4a1d24;
+            --btn-op: #132f33;
+            --btn-op-text: #00ced1;
+            --history-item: #252525;
+            --border-glow: 0 0 35px rgba(0, 255, 204, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body {
+            background-color: var(--bg-body);
+            background-image: radial-gradient(var(--bg-grid) 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+            min-height: 100vh;
+            display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            padding: 15px; overflow-x: hidden; overflow-y: auto; transition: all 0.4s ease;
+        }
+
+        /* Hiệu ứng hạt bay (Particles) */
+        #particle-wrap {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+        }
+        .particle {
+            position: absolute; bottom: -50px;
+            animation: float-up 8s infinite linear;
+            opacity: 0.5; filter: blur(1px);
+        }
+        @keyframes float-up {
+            0% { transform: translateY(0) rotate(0deg) scale(0.5); opacity: 0; }
+            20% { opacity: 0.6; }
+            80% { opacity: 0.6; }
+            100% { transform: translateY(-110vh) rotate(360deg) scale(1.2); opacity: 0; }
+        }
+
+        @keyframes shadow-pulse {
+            0% { box-shadow: var(--border-glow); }
+            100% { box-shadow: 0 0 45px var(--primary); }
+        }
+
+        .calculator-wrapper {
+            width: 100%; max-width: 430px; background: var(--calc-body); 
+            padding: 20px; border-radius: 40px; border: 4px solid var(--primary); 
+            animation: shadow-pulse 3s infinite alternate;
+            position: relative; z-index: 10; transition: all 0.3s ease;
+            margin-bottom: 20px; margin-top: 10px;
+        }
+
+        .header-title { text-align: center; color: var(--primary); font-size: 1.2rem; font-weight: 800; margin-bottom: 15px; }
+
+        .mode-toggle { display: flex; justify-content: center; gap: 6px; margin-bottom: 15px; }
+        .mode-btn {
+            flex: 1; padding: 10px 5px; border-radius: 15px; border: 1.5px solid var(--primary);
+            background: transparent; color: var(--primary); font-size: 0.65rem; font-weight: 800; cursor: pointer; transition: 0.3s;
+        }
+        .mode-btn.active { background: var(--primary); color: white; }
+
+        .screen {
+            background: var(--screen-bg); border: 3px solid var(--primary); border-radius: 20px;
+            padding: 15px; min-height: 90px; display: flex; flex-direction: column; justify-content: center; align-items: flex-end;
+            margin-bottom: 15px; position: relative; box-shadow: inset 0 0 15px rgba(0,0,0,0.1);
+        }
+        #display-main { color: var(--screen-text); font-size: 1.6rem; font-family: 'JetBrains Mono', monospace; font-weight: bold; word-break: break-all; text-align: right; }
+        .screen-label { position: absolute; bottom: 8px; left: 15px; font-size: 0.55rem; color: #888; font-weight: bold; }
+
+        #error-msg { color: #ff0055; font-size: 0.75rem; text-align: center; margin-bottom: 10px; font-weight: 700; display: none; background: rgba(255, 0, 85, 0.1); padding: 8px; border-radius: 10px; border: 1px solid #ff0055; }
+
+        .input-area { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .input-area input {
+            width: 100%; padding: 12px; border-radius: 12px; border: 2px solid var(--primary);
+            text-align: center; font-weight: 700; color: var(--input-text); background-color: var(--input-bg);
+            font-size: 1rem; outline: none; font-family: 'JetBrains Mono', monospace; transition: 0.3s;
+        }
+
+        .keypad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .btn {
+            height: 55px; border: none; border-radius: 15px; font-size: 1.1rem;
+            font-weight: bold; cursor: pointer; transition: all 0.2s ease;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.1); display: flex; justify-content: center; align-items: center;
+        }
+        .btn:active { transform: translateY(3px); box-shadow: none; }
+        .btn-func { background: var(--btn-func); color: var(--primary); }
+        .btn-op { background: var(--btn-op); color: var(--btn-op-text); }
+        .btn-num { background: var(--btn-num); color: var(--btn-text); border: 1px solid rgba(128,128,128,0.1); }
+        .btn-equal { grid-column: span 2; background: linear-gradient(45deg, var(--primary), #ff80ab); color: white; font-size: 1.6rem; }
+        
+        .btn-disabled { opacity: 0.25; cursor: not-allowed !important; filter: grayscale(1); pointer-events: auto; }
+        .active-op { background: var(--btn-op-text) !important; color: white !important; transform: translateY(4px); }
+
+        .converters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 15px; }
+        .conv-box { background: var(--input-bg); padding: 6px 2px; border-radius: 10px; text-align: center; border: 1px solid var(--primary); }
+        .conv-box span { font-size: 0.5rem; color: #888; display: block; font-weight: bold; }
+        .conv-box b { font-size: 0.65rem; color: var(--primary); font-family: 'JetBrains Mono', monospace; }
+
+        #step-box {
+            margin-top: 15px; background: var(--screen-bg); border: 2px dashed var(--primary);
+            padding: 15px; border-radius: 15px; font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem; display: none; white-space: pre; color: var(--btn-text);
+            overflow-x: auto; line-height: 1.6;
+        }
+
+        .history-panel { margin-top: 15px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 10px; max-height: 100px; overflow-y: auto; width: 100%; }
+        .history-title { font-size: 0.6rem; color: #888; font-weight: bold; text-align: center; margin-bottom: 5px; }
+        .history-item { font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; color: var(--btn-text); padding: 6px; background: var(--history-item); border-radius: 8px; margin-bottom: 5px; text-align: center; border: 1px solid rgba(0,0,0,0.05); }
+
+        /* THEME PANEL OPTIMIZED */
+        .theme-panel {
+            width: 100%; max-width: 430px; padding: 12px 15px; background: var(--calc-body); 
+            border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 2px solid var(--primary);
+            display: flex; justify-content: space-between; align-items: center; gap: 10px;
+            position: relative; z-index: 10; margin-bottom: 20px;
+        }
+        .theme-list { display: flex; gap: 6px; flex-wrap: nowrap; }
+        .theme-dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid white; cursor: pointer; transition: 0.3s; flex-shrink: 0; }
+        .theme-dot.active { transform: scale(1.15); box-shadow: 0 0 10px var(--primary); }
+
+        .dark-toggle-wrap { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .switch { position: relative; display: inline-block; width: 46px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ffcdd2; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: "☀️"; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+        input:checked + .slider { background-color: #333; }
+        input:checked + .slider:before { content: "🦉"; transform: translateX(22px); }
+
+        /* MOBILE FIXES */
+        @media (max-width: 430px) {
+            body { padding: 10px; }
+            .calculator-wrapper { padding: 15px; border-radius: 30px; }
+            .btn { height: 50px; font-size: 1rem; }
+            .theme-dot { width: 20px; height: 20px; }
+            .switch { width: 42px; height: 22px; }
+            .slider:before { height: 16px; width: 16px; font-size: 9px; }
+            input:checked + .slider:before { transform: translateX(20px); }
+            .header-title { font-size: 1.1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="particle-wrap"></div>
+
+    <div class="calculator-wrapper">
+        <div class="header-title">⋆. 🎀˚ NHÓM 2 ϑρ˚ ⋆</div>
+
+        <div class="mode-toggle">
+            <button id="m-unsigned" class="mode-btn active" onclick="setMode('unsigned')">KHÔNG DẤU</button>
+            <button id="m-signed" class="mode-btn" onclick="setMode('signed')">CÓ DẤU</button>
+        </div>
+
+        <div id="error-msg">Lỗi</div>
+
+        <div class="screen">
+            <div id="display-main">0</div>
+            <div id="screen-label" class="screen-label">UNSIGNED MODE</div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="num1" placeholder="Số A" inputmode="none" oninput="handleLaptopTyping(this)" onclick="setTarget('num1')">
+            <input type="text" id="num2" placeholder="Số B" inputmode="none" oninput="handleLaptopTyping(this)" onclick="setTarget('num2')">
+        </div>
+
+        <div class="keypad">
+            <button class="btn btn-num" onclick="press('1')">1</button>
+            <button class="btn btn-num" onclick="press('0')">0</button>
+            <button id="btn-add" class="btn btn-op" onclick="setOp('+', this)">+</button>
+            <button id="btn-sub" class="btn btn-op" onclick="setOp('-', this)">-</button>
+            <button class="btn btn-func" onclick="clearAll()">AC</button>
+            <button class="btn btn-func" onclick="back()">DEL</button>
+            <button id="btn-mul" class="btn btn-op" onclick="setOp('*', this)">×</button>
+            <button id="btn-div" class="btn btn-op" onclick="setOp('/', this)">÷</button>
+            <button class="btn btn-num" style="grid-column: span 2; font-size: 0.65rem;" onclick="toggleSteps()">XEM BƯỚC GIẢI</button>
+            <button class="btn btn-equal" onclick="calc()">=</button>
+        </div>
+
+        <div class="converters">
+            <div class="conv-box"><span>OCT</span><b id="c-oct">-</b></div>
+            <div class="conv-box"><span>DEC</span><b id="c-dec">-</b></div>
+            <div class="conv-box"><span>HEX</span><b id="c-hex">-</b></div>
+            <div class="conv-box"><span>ASC</span><b id="c-asc">-</b></div>
+        </div>
+
+        <div id="step-box"></div>
+        <div class="history-panel">
+            <div class="history-title">LỊCH SỬ TÍNH TOÁN</div>
+            <div id="hist-list"></div>
+        </div>
+    </div>
+
+    <!-- THEME PANEL -->
+    <div class="theme-panel">
+        <div class="theme-list">
+            <div class="theme-dot active" style="background: #ff4d94;" onclick="changeColor('pink', this)"></div>
+            <div class="theme-dot" style="background: #DDA0DD;" onclick="changeColor('purple', this)"></div>
+            <div class="theme-dot" style="background: #00BFFF;" onclick="changeColor('blue', this)"></div>
+            <div class="theme-dot" style="background: #2ecc71;" onclick="changeColor('mint', this)"></div>
+            <div class="theme-dot" style="background: #FFA07A;" onclick="changeColor('orange', this)"></div>
+            <div class="theme-dot" style="background: #333333;" onclick="changeColor('classic', this)"></div>
+        </div>
+        <div class="dark-toggle-wrap">
+            <span style="font-size: 0.55rem; font-weight: 800; color: var(--primary);">DARK</span>
+            <label class="switch">
+                <input type="checkbox" id="dark-switch" onchange="toggleDark(this)">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <script>
+        let curOp = null, actId = 'num1', currentMode = 'unsigned';
+
+        const colors = {
+            pink: { primary: '#ff4d94', func: '#ffcdd2', op: '#e0f7fa', grid: '#ffc2d1' },
+            purple: { primary: '#DDA0DD', func: '#f3e5f5', op: '#f0f4ff', grid: '#e1bee7' },
+            blue: { primary: '#00BFFF', func: '#e1f5fe', op: '#fff9c4', grid: '#b3e5fc' },
+            mint: { primary: '#2ecc71', func: '#e8f5e9', op: '#fff3e0', grid: '#c8e6c9' },
+            orange: { primary: '#FFA07A', func: '#ffecb3', op: '#e0f2f1', grid: '#ffccbc' },
+            classic: { primary: '#333333', func: '#cccccc', op: '#bbbbbb', grid: '#999999' }
+        };
+
+        function changeColor(name, el) {
+            const c = colors[name];
+            const r = document.documentElement;
+            r.style.setProperty('--primary', c.primary);
+            r.style.setProperty('--btn-func', c.func);
+            r.style.setProperty('--btn-op', c.op);
+            r.style.setProperty('--bg-grid', c.grid);
+            document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function toggleDark(cb) { document.body.setAttribute('data-theme', cb.checked ? 'dark' : 'light'); }
+
+        function format4Bit(val) {
+            let clean = val.replace(/\s/g, '');
+            if (!clean) return "";
+            return clean.split('').reverse().join('').match(/.{1,4}/g).join(' ').split('').reverse().join('');
+        }
+
+        function handleLaptopTyping(el) {
+            let pos = el.selectionStart;
+            let digitsBefore = el.value.substring(0, pos).replace(/\s/g, '').length;
+            let clean = el.value.replace(/[^01]/g, '');
+            if(currentMode === 'signed' && clean.length > 8) { 
+                clean = clean.slice(0, 8); 
+                showErr("Lỗi: Chế độ có dấu giới hạn 8 bit."); 
+            } else showErr(false);
+            el.value = format4Bit(clean);
+            let newPos = 0, count = 0;
+            for (let i = 0; i < el.value.length && count < digitsBefore; i++) {
+                if (el.value[i] !== ' ') count++;
+                newPos = i + 1;
+            }
+            el.setSelectionRange(newPos, newPos);
+        }
+
+        function setTarget(id) { actId = id; showErr(false); }
+        
+        function setMode(m) { 
+            currentMode = m; 
+            document.getElementById('m-unsigned').classList.toggle('active', m === 'unsigned');
+            document.getElementById('m-signed').classList.toggle('active', m === 'signed');
+            document.getElementById('screen-label').innerText = m === 'unsigned' ? "UNSIGNED MODE" : "SIGNED 8-BIT MODE";
+            
+            const mulBtn = document.getElementById('btn-mul');
+            const divBtn = document.getElementById('btn-div');
+            
+            if (m === 'signed') {
+                mulBtn.classList.add('btn-disabled');
+                divBtn.classList.add('btn-disabled');
+            } else {
+                mulBtn.classList.remove('btn-disabled');
+                divBtn.classList.remove('btn-disabled');
+            }
+            
+            clearAll(); 
+        }
+
+        function showErr(msg) {
+            const err = document.getElementById('error-msg');
+            if(!msg) { err.style.display = 'none'; return; }
+            err.innerText = msg; err.style.display = 'block';
+            setTimeout(() => { err.style.display = 'none'; }, 3000);
+        }
+
+        function press(v) {
+            const el = document.getElementById(actId);
+            let clean = el.value.replace(/\s/g, '');
+            if(currentMode === 'signed' && clean.length >= 8) return showErr("Lỗi: Đã giới hạn 8 bit");
+            el.value = format4Bit(clean + v);
+            el.focus(); showErr(false);
+        }
+
+        function back() {
+            const el = document.getElementById(actId);
+            let clean = el.value.replace(/\s/g, '');
+            el.value = format4Bit(clean.slice(0, -1));
+        }
+
+        function clearAll() {
+            document.getElementById('num1').value = ''; document.getElementById('num2').value = '';
+            document.getElementById('display-main').innerText = '0'; document.getElementById('step-box').style.display = 'none';
+            document.querySelectorAll('.btn-op').forEach(b => b.classList.remove('active-op'));
+            ['c-oct', 'c-dec', 'c-hex', 'c-asc'].forEach(id => document.getElementById(id).innerText = '-');
+            curOp = null; showErr(false);
+        }
+
+        function setOp(op, btn) {
+            if(currentMode === 'signed' && (op === '*' || op === '/')) {
+                return showErr("Lỗi: Chỉ hỗ trợ nhân, chia ở trường hợp không dấu");
+            }
+            if(!document.getElementById('num1').value) return showErr("Lỗi: Hãy nhập số A.");
+            curOp = op; document.querySelectorAll('.btn-op').forEach(b => b.classList.remove('active-op'));
+            btn.classList.add('active-op'); actId = 'num2'; document.getElementById('num2').focus();
+        }
+
+        function fromTwos(bin) { let n = bin.length; let val = BigInt("0b" + bin); return (bin[0] === '1') ? val - (1n << BigInt(n)) : val; }
+        function toTwos(val, bits) { let mask = (1n << BigInt(bits)) - 1n; return (BigInt(val) & mask).toString(2).padStart(bits, '0'); }
+
+        function calc() {
+            const aRaw = document.getElementById('num1').value.replace(/\s/g, '');
+            const bRaw = document.getElementById('num2').value.replace(/\s/g, '');
+            if(!aRaw) return showErr("Lỗi: Hãy nhập số A.");
+            if(!curOp) return showErr("Lỗi: Hãy chọn phép tính.");
+            if(!bRaw) return showErr("Lỗi: Hãy nhập số B.");
+
+            try {
+                let dA, dB, resDec, finalBin;
+                let bits = Math.max(aRaw.length, bRaw.length);
+
+                if (currentMode === 'unsigned') {
+                    dA = BigInt("0b" + aRaw); dB = BigInt("0b" + bRaw);
+                    if(curOp==='/' && dB===0n) return showErr("Lỗi: Không thể chia cho 0.");
+                    switch(curOp) {
+                        case '+': resDec = dA + dB; break;
+                        case '-': resDec = dA - dB; break;
+                        case '*': resDec = dA * dB; break;
+                        case '/': resDec = dA / dB; break;
+                    }
+                    finalBin = (resDec < 0n ? "-" : "") + (resDec < 0n ? -resDec : resDec).toString(2);
+                } else {
+                    dA = fromTwos(aRaw.padStart(bits, aRaw[0]));
+                    dB = fromTwos(bRaw.padStart(bits, bRaw[0]));
+                    switch(curOp) {
+                        case '+': resDec = dA + dB; break;
+                        case '-': resDec = dA - dB; break;
+                    }
+                    finalBin = toTwos(resDec, bits); 
+                }
+
+                document.getElementById('display-main').innerText = format4Bit(finalBin);
+                document.getElementById('c-oct').innerText = resDec.toString(8);
+                document.getElementById('c-dec').innerText = resDec.toString();
+                document.getElementById('c-hex').innerText = (resDec < 0n ? "-" : "") + (resDec < 0n ? -resDec : resDec).toString(16).toUpperCase();
+                
+                let n = Number(resDec);
+                let asc = document.getElementById('c-asc');
+                if (n >= 32 && n <= 126) asc.innerText = `'${String.fromCharCode(n)}'`;
+                else if (n >= 0 && n <= 255) asc.innerText = 'N-P';
+                else asc.innerText = 'N/A';
+
+                genVerticalSteps(aRaw, bRaw, finalBin, curOp, dA, dB, resDec);
+                addHistory(format4Bit(aRaw), curOp, format4Bit(bRaw), format4Bit(finalBin));
+            } catch(e) { showErr("Lỗi tính toán."); }
+        }
+
+        function genVerticalSteps(a, b, res, op, dA, dB, dRes) {
+            const box = document.getElementById('step-box');
+            let maxW = Math.max(a.length, b.length, res.replace('-','').length);
+            if (op === '*') maxW = res.length;
+            const fmt = (s) => s.split('').join(' ');
+            const padLen = maxW * 2 - 1;
+
+            let s = `TRÌNH BÀY CHI TIẾT:\n\n`;
+            s += `      ${fmt(a).padStart(padLen, ' ')}  (A = ${dA})\n`;
+            s += `   ${op}  ${fmt(b).padStart(padLen, ' ')}  (B = ${dB})\n`;
+            s += `      ${'-'.repeat(padLen)}\n`;
+
+            if (op === '*') {
+                let bArr = b.split('').reverse();
+                for (let i = 0; i < bArr.length; i++) {
+                    let part = (bArr[i] === '1' ? a : "0".repeat(a.length));
+                    let staircase = fmt(part) + " ".repeat(i * 2);
+                    s += `      ${staircase.padStart(padLen, ' ')}  (Bit ${i})\n`;
+                }
+                s += `      ${'-'.repeat(padLen)}\n`;
+            }
+            s += `      ${fmt(res.replace('-','')).padStart(padLen, ' ')}  (KQ = ${dRes})`;
+            box.innerText = s;
+        }
+
+        function toggleSteps() {
+            let b = document.getElementById('step-box');
+            if(document.getElementById('display-main').innerText === '0') return showErr("Hãy tính toán trước!");
+            b.style.display = (b.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function addHistory(a, op, b, res) {
+            const h = document.getElementById('hist-list');
+            if(h.innerText.includes("Lịch sử")) h.innerHTML = "";
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerText = `${a} ${op} ${b} = ${res}`;
+            h.prepend(item);
+        }
+
+        const icons = ['✨', '🌸', '💖', '⭐', '🎀', '☁️', '🦄'];
+        function createParticle() {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.innerHTML = icons[Math.floor(Math.random() * icons.length)];
+            p.style.left = Math.random() * 100 + 'vw';
+            p.style.fontSize = (Math.random() * 15 + 10) + 'px';
+            p.style.animationDuration = (Math.random() * 5 + 5) + 's';
+            document.getElementById('particle-wrap').appendChild(p);
+            setTimeout(() => p.remove(), 8000);
+        }
+        setInterval(createParticle, 800);
+    </script>
+</body>
+</html>
