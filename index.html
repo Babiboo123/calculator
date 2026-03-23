@@ -373,17 +373,29 @@ function calc() {
     if(!curOp) return showErr("Lỗi : Chưa chọn phép tính.");
     if(!rawB) return showErr("Lỗi: Hãy nhập số B.");
 
-    // 1. CHUẨN HÓA 8-BIT (SIGN EXTENSION)
-    let valA = signExtend8(rawA);
-    let valB = signExtend8(rawB);
+    // 1. CHUẨN HÓA & LẤY GIÁ TRỊ THẬP PHÂN (TÁCH BIỆT CHẾ ĐỘ)
+    let valA, valB, dA, dB;
 
-    // 2. CHUYỂN SANG SỐ THẬP PHÂN CÓ DẤU
-    let dA = parseInt(valA, 2);
-    if (valA[0] === '1') dA -= 256; 
+    if (currentMode === 'signed') {
+        // CHẾ ĐỘ CÓ DẤU: Dùng Sign Extension (Ép kiểu 8-bit)
+        valA = signExtend8(rawA);
+        valB = signExtend8(rawB);
+        
+        dA = parseInt(valA, 2);
+        if (valA[0] === '1') dA -= 256; // Chuyển từ nhị phân bù 2 sang số âm
 
-    let dB = parseInt(valB, 2);
-    if (valB[0] === '1') dB -= 256;
+        dB = parseInt(valB, 2);
+        if (valB[0] === '1') dB -= 256;
+    } else {
+        // CHẾ ĐỘ KHÔNG DẤU: Chỉ thêm số 0 cho đủ 8 bit, không ép kiểu dấu
+        valA = rawA.padStart(8, '0');
+        valB = rawB.padStart(8, '0');
+        
+        dA = parseInt(valA, 2);
+        dB = parseInt(valB, 2);
+    }
 
+    // 2. TÍNH TOÁN
     let res = 0;
     if(curOp === '/' && dB === 0) return showErr("Lỗi : Không thể chia cho 0.");
     
@@ -393,6 +405,7 @@ function calc() {
         case '*': res = dA * dB; break;
         case '/': res = Math.floor(dA / dB); break;
     }
+
 
     // 3. LẤY 8-BIT KẾT QUẢ
     let maskedRes = res & 0xFF;
@@ -417,19 +430,23 @@ function calc() {
 // Cập nhật luôn hàm genSteps để hiện cả giá trị thập phân cho rõ ràng
 function genSteps(a, b, res, op, dA, dB, dRes) {
     const box = document.getElementById('step-box');
-    let s = `TRÌNH BÀY CHI TIẾT:\n\n`;
+    // Hiển thị tên chế độ để người dùng dễ theo dõi
+    let modeName = currentMode === 'signed' ? "CÓ DẤU (SIGNED)" : "KHÔNG DẤU (UNSIGNED)";
+    
+    let s = `TRÌNH BÀY CHI TIẾT (${modeName}):\n\n`;
     s += `   ${a}  (A = ${dA})\n`;
     s += `${op}  ${b}  (B = ${dB})\n`;
     s += `   ${'-'.repeat(9)}\n`;
     s += `   ${res}  (KQ = ${dRes})`;
     
-    // Thêm cảnh báo Overflow nếu kết quả vượt vùng -128 đến 127
-    if (dRes > 127 || dRes < -128) {
+    // Chỉ hiện cảnh báo Overflow (Tràn số) khi ở chế độ Có Dấu
+    if (currentMode === 'signed' && (dRes > 127 || dRes < -128)) {
         s += `\n\n⚠️ CẢNH BÁO: TRÀN SỐ (OVERFLOW)!`;
     }
     
     box.innerText = s;
 }
+
 
         function toggleSteps() {
             let b = document.getElementById('step-box');
