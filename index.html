@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NHÓM 2 - 8-BIT NEON CASIO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* HỆ THỐNG BIẾN MÀU MẶC ĐỊNH (LIGHT MODE) */
+        :root {
+            --bg-dots: #fff0f3;
+            --bg-grid: #ffc2d1;
+            --calc-body: #ffffff;
+            --neon-pink: #ff4d94;
+            --border-glow: 0 0 25px rgba(255, 77, 148, 0.5);
+            --screen-bg: #ffffff;
+            --screen-text: #ff4d94;
+            --input-bg: #ffffff;
+            --input-border: #ffeef5;
+            --btn-num-bg: #ffffff;
+            --btn-num-text: #444;
+            --btn-num-border: #f0f0f0;
+            --btn-func-bg: #ffcdd2;
+            --btn-func-text: #ff1493;
+            --btn-op-bg: #e0f7fa;
+            --btn-op-text: #00acc1;
+            --conv-bg: #fffafa;
+            --conv-border: #ffd1dc;
+            --history-text: #bbb;
+            --step-bg: #fff;
+        }
+
+        /* HỆ THỐNG BIẾN MÀU KHI NGƯỜI DÙNG BẬT DARK MODE */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-dots: #121212;
+                --bg-grid: #333333;
+                --calc-body: #1e1e1e;
+                --neon-pink: #ff4d94;
+                --border-glow: 0 0 30px rgba(255, 77, 148, 0.6);
+                --screen-bg: #000000;
+                --screen-text: #ff4d94;
+                --input-bg: #2a2a2a;
+                --input-border: #444444;
+                --btn-num-bg: #333333;
+                --btn-num-text: #eeeeee;
+                --btn-num-border: #444444;
+                --btn-func-bg: #4a1d24;
+                --btn-func-text: #ff85a2;
+                --btn-op-bg: #132f33;
+                --btn-op-text: #00ced1;
+                --conv-bg: #252525;
+                --conv-border: #444444;
+                --history-text: #555555;
+                --step-bg: #111111;
+            }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body {
+            background-color: var(--bg-dots);
+            background-image: radial-gradient(var(--bg-grid) 1px, transparent 1px);
+            background-size: 20px 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            overflow-x: hidden;
+            transition: background-color 0.3s ease;
+        }
+
+        .particle {
+            position: fixed; pointer-events: none; z-index: 1;
+            animation: float-up 6s infinite linear; opacity: 0.5;
+        }
+        @keyframes float-up {
+            0% { transform: translateY(110vh) scale(0); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
+        }
+
+        .calculator-body {
+            width: 100%;
+            max-width: 440px;
+            background: var(--calc-body);
+            padding: 25px;
+            border-radius: 45px;
+            border: 3px solid var(--neon-pink);
+            box-shadow: var(--border-glow);
+            position: relative;
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+
+        .header-title {
+            text-align: center;
+            color: var(--neon-pink);
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+        }
+
+        .screen {
+            background: var(--screen-bg);
+            border: 3px solid var(--neon-pink);
+            border-radius: 20px;
+            padding: 15px;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-end;
+            margin-bottom: 15px;
+            position: relative;
+            transition: background 0.3s ease;
+        }
+
+        #display-main {
+            color: var(--screen-text);
+            font-size: 2.2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: bold;
+            word-break: break-all;
+        }
+
+        .screen-label {
+            position: absolute;
+            bottom: 8px;
+            left: 15px;
+            font-size: 0.6rem;
+            color: #777;
+            font-weight: bold;
+        }
+
+        #error-msg {
+            color: #ff0055;
+            font-size: 0.75rem;
+            text-align: center;
+            margin-bottom: 8px;
+            font-weight: 600;
+            display: none;
+            background: rgba(255, 0, 85, 0.1);
+            padding: 5px;
+            border-radius: 8px;
+        }
+
+        .input-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .input-area input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 2px solid var(--input-border);
+            text-align: center;
+            font-weight: 700;
+            color: var(--neon-pink);
+            background-color: var(--input-bg);
+            font-size: 1.1rem;
+            outline: none;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.3s ease;
+        }
+
+        .input-area input:focus { border-color: var(--neon-pink); }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .btn {
+            height: 60px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn:active { transform: translateY(4px); box-shadow: none; }
+
+        .btn-func { background: var(--btn-func-bg); color: var(--btn-func-text); }
+        .btn-op { background: var(--btn-op-bg); color: var(--btn-op-text); }
+        .btn-num { background: var(--btn-num-bg); color: var(--btn-num-text); border: 1px solid var(--btn-num-border); }
+        
+        .btn-equal {
+            grid-column: span 2;
+            background: linear-gradient(to right, #ff4081, #ff80ab);
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .active-op { background: var(--btn-op-text) !important; color: white !important; transform: translateY(4px); box-shadow: none !important; }
+
+        .converters {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin-top: 20px;
+        }
+
+        .conv-box {
+            background: var(--conv-bg);
+            padding: 8px 2px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid var(--conv-border);
+            transition: background 0.3s ease;
+        }
+
+        .conv-box span { font-size: 0.55rem; color: #777; display: block; margin-bottom: 2px; font-weight: bold; }
+        .conv-box b { font-size: 0.75rem; color: var(--neon-pink); font-family: 'JetBrains Mono', monospace; word-break: break-all; }
+
+        #step-box {
+            margin-top: 15px;
+            background: var(--step-bg);
+            border: 2px dashed var(--neon-pink);
+            padding: 12px;
+            border-radius: 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            display: none;
+            white-space: pre;
+            color: var(--neon-pink);
+            overflow-x: auto;
+        }
+
+        .history-panel {
+            margin-top: 15px;
+            border-top: 1px solid var(--input-border);
+            padding-top: 10px;
+            max-height: 80px;
+            overflow-y: auto;
+        }
+
+        .history-item { font-size: 0.7rem; color: var(--history-text); text-align: center; padding: 4px 0; font-style: italic; }
+
+        @media (max-width: 400px) {
+            .calculator-body { padding: 15px; border-radius: 30px; }
+            .btn { height: 52px; font-size: 1rem; }
+            #display-main { font-size: 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="particle-wrap"></div>
+
+    <div class="calculator-body">
+        <div class="header-title">⋆. 🎀˚ NHÓM 2 ϑρ˚ ⋆</div>
+
+        <!-- Vùng báo lỗi hiển thị các câu thông báo cũ -->
+        <div id="error-msg">Lỗi</div>
+
+        <div class="screen">
+            <div id="display-main">0</div>
+            <div class="screen-label">8-BIT SIGNED / UNSIGNED</div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="num1" placeholder="Số A" inputmode="none" oninput="handleLaptopTyping(this)" onclick="setTarget('num1')">
+            <input type="text" id="num2" placeholder="Số B" inputmode="none" oninput="handleLaptopTyping(this)" onclick="setTarget('num2')">
+        </div>
+
+        <div class="keypad">
+            <button class="btn btn-num" onclick="press('1')">1</button>
+            <button class="btn btn-num" onclick="press('0')">0</button>
+            <button class="btn btn-op" onclick="setOp('+', this)">+</button>
+            <button class="btn btn-op" onclick="setOp('-', this)">-</button>
+
+            <button class="btn btn-func" onclick="clearAll()">AC</button>
+            <button class="btn btn-func" onclick="back()">DEL</button>
+            <button class="btn btn-op" onclick="setOp('*', this)">×</button>
+            <button class="btn btn-op" onclick="setOp('/', this)">÷</button>
+
+            <button class="btn btn-num" style="grid-column: span 2; font-size: 0.75rem;" onclick="toggleSteps()">XEM BƯỚC GIẢI</button>
+            <button class="btn btn-equal" onclick="calc()">=</button>
+        </div>
+
+        <div class="converters">
+            <div class="conv-box"><span>Hệ 8</span><b id="c-oct">-</b></div>
+            <div class="conv-box"><span>Hệ 10</span><b id="c-dec">-</b></div>
+            <div class="conv-box"><span>Hệ 16</span><b id="c-hex">-</b></div>
+            <div class="conv-box"><span>ASCII</span><b id="c-asc">-</b></div>
+        </div>
+
+        <div id="step-box"></div>
+        <div class="history-panel" id="hist-list">
+            <div style="font-size: 0.6rem; color:var(--history-text); text-align:center">Lịch sử tính toán</div>
+        </div>
+    </div>
+
+    <script>
+        let curOp = null;
+        let actId = 'num1';
+
+        function format4Bit(val) {
+            let clean = val.replace(/\s/g, '');
+            if (!clean) return "";
+            return clean.split('').reverse().join('')
+                        .match(/.{1,4}/g).join(' ')
+                        .split('').reverse().join('');
+        }
+
+        function handleLaptopTyping(el) {
+            let oldCursor = el.selectionStart;
+            let oldVal = el.value;
+            let digitsBeforeCursor = oldVal.substring(0, oldCursor).replace(/\s/g, '').length;
+            let cleanVal = el.value.replace(/[^01]/g, '');
+            
+            // BÁO LỖI 8-BIT TỪ CODE CŨ
+            if(cleanVal.length > 8) {
+                cleanVal = cleanVal.slice(0, 8);
+                showErr("Lỗi : Chỉ được nhập tối đa 8 bit");
+            } else {
+                showErr(false);
+            }
+            
+            let formatted = format4Bit(cleanVal);
+            el.value = formatted;
+            let newCursor = 0;
+            let digitCount = 0;
+            for (let i = 0; i < formatted.length && digitCount < digitsBeforeCursor; i++) {
+                if (formatted[i] !== ' ') digitCount++;
+                newCursor = i + 1;
+            }
+            el.setSelectionRange(newCursor, newCursor);
+        }
+
+        function setTarget(id) { actId = id; showErr(false); }
+        
+        function showErr(msg) {
+            const err = document.getElementById('error-msg');
+            if(!msg) { err.style.display = 'none'; return; }
+            err.innerText = msg;
+            err.style.display = 'block';
+        }
+
+        function press(v) {
+            const el = document.getElementById(actId);
+            let oldCursor = el.selectionStart;
+            let digitsBefore = el.value.substring(0, oldCursor).replace(/\s/g, '').length;
+            let clean = el.value.replace(/\s/g, '');
+            
+            if (clean.length < 8) {
+                let newClean = clean.slice(0, digitsBefore) + v + clean.slice(digitsBefore);
+                el.value = format4Bit(newClean);
+                let targetDigits = digitsBefore + 1;
+                let newPos = 0, count = 0;
+                for(let i=0; i<el.value.length && count < targetDigits; i++) {
+                    if(el.value[i] !== ' ') count++;
+                    newPos = i + 1;
+                }
+                el.setSelectionRange(newPos, newPos);
+                showErr(false);
+            } else {
+                // BÁO LỖI 8-BIT TỪ CODE CŨ
+                showErr("Lỗi : Chỉ được nhập tối đa 8 bit");
+            }
+            el.focus();
+        }
+
+        function back() {
+            const el = document.getElementById(actId);
+            let oldCursor = el.selectionStart;
+            let digitsBefore = el.value.substring(0, oldCursor).replace(/\s/g, '').length;
+            let clean = el.value.replace(/\s/g, '');
+            if(digitsBefore > 0) {
+                let newClean = clean.slice(0, digitsBefore - 1) + clean.slice(digitsBefore);
+                el.value = format4Bit(newClean);
+                let targetDigits = digitsBefore - 1;
+                let newPos = 0, count = 0;
+                for(let i=0; i<el.value.length && count < targetDigits; i++) {
+                    if(el.value[i] !== ' ') count++;
+                    newPos = i + 1;
+                }
+                el.setSelectionRange(newPos, newPos);
+            }
+            showErr(false);
+            el.focus();
+        }
+
+        function clearAll() {
+            document.getElementById('num1').value = '';
+            document.getElementById('num2').value = '';
+            document.getElementById('display-main').innerText = '0';
+            document.getElementById('step-box').style.display = 'none';
+            document.querySelectorAll('.btn-op').forEach(b => b.classList.remove('active-op'));
+            ['c-oct', 'c-dec', 'c-hex', 'c-asc'].forEach(id => document.getElementById(id).innerText = '-');
+            curOp = null; showErr(false);
+        }
+
+        function setOp(op, btn) {
+            curOp = op;
+            document.querySelectorAll('.btn-op').forEach(b => b.classList.remove('active-op'));
+            btn.classList.add('active-op');
+            actId = 'num2'; 
+            document.getElementById('num2').focus();
+            showErr(false);
+        }
+
+        function calc() {
+            const a = document.getElementById('num1').value.replace(/\s/g, '');
+            const b = document.getElementById('num2').value.replace(/\s/g, '');
+            const display = document.getElementById('display-main');
+
+            // BÁO LỖI NHẬP THIẾU TỪ CODE CŨ
+            if(!a) return showErr("Lỗi : Hãy nhập số A.");
+            if(!curOp) return showErr("Lỗi : Chưa chọn phép tính.");
+            if(!b) return showErr("Lỗi : Hãy nhập số B.");
+
+            let dA = parseInt(a, 2);
+            let dB = parseInt(b, 2);
+            let res = 0;
+
+            // BÁO LỖI CHIA 0 TỪ CODE CŨ
+            if(curOp === '/' && dB === 0) return showErr("Lỗi : Không thể chia cho 0.");
+
+            switch(curOp) {
+                case '+': res = dA + dB; break;
+                case '-': res = dA - dB; break;
+                case '*': res = dA * dB; break;
+                case '/': res = Math.floor(dA / dB); break;
+            }
+
+            let bRes = (res >>> 0).toString(2);
+            display.innerText = format4Bit(bRes);
+            
+            document.getElementById('c-oct').innerText = (res >>> 0).toString(8);
+            document.getElementById('c-dec').innerText = res;
+            document.getElementById('c-hex').innerText = (res >>> 0).toString(16).toUpperCase();
+            
+            const asc = document.getElementById('c-asc');
+            if (res >= 32 && res <= 126) asc.innerText = `'${String.fromCharCode(res)}'`;
+            else asc.innerText = (res >= 0 && res <= 255) ? 'Char' : 'N/A';
+            
+            genSteps(format4Bit(a), format4Bit(b), format4Bit(bRes), curOp);
+            addHistory(format4Bit(a), curOp, format4Bit(b), format4Bit(bRes));
+        }
+
+        function genSteps(a, b, res, op) {
+            const m = Math.max(a.length, b.length, res.length);
+            let s = `   ${a.padStart(m, ' ')}\n`;
+            s += `${op}  ${b.padStart(m, ' ')}\n`;
+            s += `   ${'-'.repeat(m)}\n`;
+            s += `   ${res.padStart(m, ' ')}`;
+            document.getElementById('step-box').innerText = s;
+        }
+
+        function toggleSteps() {
+            let box = document.getElementById('step-box');
+            // BÁO LỖI CHƯA TÍNH TOÁN TỪ CODE CŨ
+            if(document.getElementById('display-main').innerText === '0') return showErr("Lỗi : Thực hiện phép tính trước.");
+            box.style.display = (box.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function addHistory(a, op, b, res) {
+            const hist = document.getElementById('hist-list');
+            if(hist.innerText.includes("Lịch sử tính toán")) hist.innerHTML = "";
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerText = `${a} ${op} ${b} = ${res}`;
+            hist.prepend(item);
+        }
+
+        const icons = ['✨', '🌸', '💖', '⭐', '🎀'];
+        setInterval(() => {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.innerHTML = icons[Math.floor(Math.random()*5)];
+            p.style.left = Math.random() * 100 + 'vw';
+            p.style.fontSize = (Math.random()*15 + 10) + 'px';
+            document.getElementById('particle-wrap').appendChild(p);
+            setTimeout(() => p.remove(), 6000);
+        }, 1000);
+    </script>
+</body>
+</html>
