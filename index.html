@@ -256,16 +256,39 @@
             classic: { primary: '#333333', func: '#cccccc', op: '#bbbbbb', grid: '#999999' }
         };
 
+// Tìm chỗ này và dán đè lên/thêm vào
+    const decorations = {
+        pink: { title: "⋆. 🎀˚ NHÓM 2 ϑρ˚ ⋆", icons: ['✨', '🌸', '💖', '⭐', '🎀', '☁️', '🦄'] },
+        purple: { title: "⋆.˚✮ NHÓM 2 ✮˚.⋆", icons: ['🍇', '🫐', '👾', '☂️', '💜', '🔮', '🌌'] },
+        blue: { title: "𓆝🐬𓆟 NHÓM 2 𓆞🪼𓆝", icons: ['🐡', '🐟', '🐙', '🐬', '🪼', '🌊', '💧'] },
+        mint: { title: "𖧷🍡 NHÓM 2 ₊˚˖𖧷", icons: ['🍡', '🌱', '🩷', '🌸', '🍥', '🍃', '🍵'] },
+        orange: { title: "✩₊˚🧸 NHÓM 2 ⋆☾⋆", icons: ['🍩', '🍊', '🍯', '🥐', '🍪', '🧸', '🍂'] },
+        classic: { title: "☆⋆｡ NHÓM 2 𖦹°✧", icons: ['🫍', '🎱', '📷', '🖤', '🎮', '♟️', '🕶️'] }
+};
+
+// Tạo một biến để theo dõi bộ icon hiện tại (mặc định là hồng)
+        let currentIcons = decorations.pink.icons;
+
         function changeColor(name, el) {
-            const c = colors[name];
-            const r = document.documentElement;
-            r.style.setProperty('--primary', c.primary);
-            r.style.setProperty('--btn-func', c.func);
-            r.style.setProperty('--btn-op', c.op);
-            r.style.setProperty('--bg-grid', c.grid);
-            document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
-            el.classList.add('active');
-        }
+        const c = colors[name];
+        const deco = decorations[name]; // Lấy dữ liệu trang trí theo tên màu
+        const r = document.documentElement;
+    
+    // Đổi màu CSS
+        r.style.setProperty('--primary', c.primary);
+        r.style.setProperty('--btn-func', c.func);
+        r.style.setProperty('--btn-op', c.op);
+        r.style.setProperty('--bg-grid', c.grid);
+    
+    // ĐỔI TÊN NHÓM (Cái bạn cần đây nè)
+    document.querySelector('.header-title').innerText = deco.title;
+    
+    // CẬP NHẬT BỘ ICON ĐỂ BAY (Dùng cho hàm createParticle bên dưới)
+    currentIcons = deco.icons;
+
+    document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
+    el.classList.add('active');
+}
 
         function toggleDark(cb) { document.body.setAttribute('data-theme', cb.checked ? 'dark' : 'light'); }
 
@@ -496,17 +519,21 @@ function genSteps(a, b, res, op, dA, dB, dRes) {
             h.prepend(item);
         }
 
-        const icons = ['✨', '🌸', '💖', '⭐', '🎀', '☁️', '🦄'];
-        function createParticle() {
-            const p = document.createElement('div');
-            p.className = 'particle';
-            p.innerHTML = icons[Math.floor(Math.random() * icons.length)];
-            p.style.left = Math.random() * 100 + 'vw';
-            p.style.fontSize = (Math.random() * 15 + 10) + 'px';
-            p.style.animationDuration = (Math.random() * 5 + 5) + 's';
-            document.getElementById('particle-wrap').appendChild(p);
-            setTimeout(() => p.remove(), 8000);
-        }
+
+    function createParticle() {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    
+    // Lấy ngẫu nhiên icon trong bộ icon đang được chọn
+    const randomIcon = currentIcons[Math.floor(Math.random() * currentIcons.length)];
+    
+    p.innerHTML = randomIcon;
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.fontSize = (Math.random() * 15 + 10) + 'px';
+    p.style.animationDuration = (Math.random() * 5 + 5) + 's';
+    document.getElementById('particle-wrap').appendChild(p);
+    setTimeout(() => p.remove(), 8000);
+}
         setInterval(createParticle, 800);
     </script>
 </body>
